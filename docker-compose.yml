@@ -3,7 +3,7 @@ services:
     build:
       context: .
       args:
-        - VITE_API_URL=http://31.220.76.204:3001
+        - VITE_API_URL=https://podcast.jerankda.dev
     container_name: podcaster
     restart: unless-stopped
     ports:
@@ -15,6 +15,12 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3001
+    networks:
+      - proxy-network
+
+networks:
+  proxy-network:
+    external: true
 
 volumes:
   podcaster_uploads:
