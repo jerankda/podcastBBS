@@ -248,6 +248,84 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
 })
 
+// GET /api/podcasts/:id/feed - RSS Feed für einen Podcast
+app.get('/api/podcasts/:id/feed', (req, res) => {
+  try {
+    const data = readDB()
+    const podcast = data.podcasts.find(p => p.id === req.params.id)
+    
+    if (!podcast) {
+      return res.status(404).json({ error: 'Podcast not found' })
+    }
+    
+    // Base URL für Links
+    const baseUrl = `${req.protocol}://${req.get('host')}`
+    
+    // Escape XML special characters
+    const escapeXml = (str) => {
+      if (!str) return ''
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;')
+    }
+    
+    // Format duration for iTunes (HH:MM:SS or MM:SS)
+    const formatDuration = (duration) => {
+      if (!duration) return '00:00'
+      return duration
+    }
+    
+    // Generate RSS XML
+    const rss = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" 
+  xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd"
+  xmlns:atom="http://www.w3.org/2005/Atom"
+  xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>${escapeXml(podcast.title)}</title>
+    <link>${baseUrl}/podcast/${podcast.id}</link>
+    <description>${escapeXml(podcast.description)}</description>
+    <language>de-DE</language>
+    <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
+    <atom:link href="${baseUrl}/api/podcasts/${podcast.id}/feed" rel="self" type="application/rss+xml"/>
+    
+    <itunes:author>${escapeXml(podcast.author)}</itunes:author>
+    <itunes:summary>${escapeXml(podcast.description)}</itunes:summary>
+    <itunes:category text="${escapeXml(podcast.category || 'Society &amp; Culture')}"/>
+    <itunes:explicit>false</itunes:explicit>
+    ${podcast.imageUrl ? `<itunes:image href="${baseUrl}${podcast.imageUrl}"/>` : ''}
+    ${podcast.imageUrl ? `<image>
+      <url>${baseUrl}${podcast.imageUrl}</url>
+      <title>${escapeXml(podcast.title)}</title>
+      <link>${baseUrl}/podcast/${podcast.id}</link>
+    </image>` : ''}
+    
+    <item>
+      <title>${escapeXml(podcast.title)}</title>
+      <description>${escapeXml(podcast.description)}</description>
+      <pubDate>${new Date(podcast.createdAt).toUTCString()}</pubDate>
+      <enclosure url="${baseUrl}${podcast.audioUrl}" type="audio/mpeg"/>
+      <guid isPermaLink="false">${podcast.id}</guid>
+      <link>${baseUrl}/podcast/${podcast.id}</link>
+      <itunes:duration>${formatDuration(podcast.duration)}</itunes:duration>
+      <itunes:author>${escapeXml(podcast.author)}</itunes:author>
+      <itunes:summary>${escapeXml(podcast.description)}</itunes:summary>
+      ${podcast.imageUrl ? `<itunes:image href="${baseUrl}${podcast.imageUrl}"/>` : ''}
+    </item>
+  </channel>
+</rss>`
+    
+    res.set('Content-Type', 'application/rss+xml; charset=utf-8')
+    res.send(rss)
+  } catch (error) {
+    console.error('Error generating RSS feed:', error)
+    res.status(500).json({ error: 'Failed to generate RSS feed' })
+  }
+})
+
 // Error handling middleware
 app.use((error, req, res, next) => {
   console.error('Server error:', error)

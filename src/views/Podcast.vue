@@ -117,6 +117,32 @@
             <h2>Über diese Episode</h2>
             <p>{{ podcast.description }}</p>
           </div>
+          
+          <!-- RSS Feed -->
+          <div class="podcast-rss">
+            <h2>RSS Feed</h2>
+            <div class="rss-box">
+              <div class="rss-url">
+                <input type="text" readonly :value="rssFeedUrl" ref="rssInput" />
+                <button class="btn btn-secondary" @click="copyRssUrl">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                  {{ copyButtonText }}
+                </button>
+              </div>
+              <p class="rss-hint">Füge diese URL in deinen Podcast-Player ein (z.B. Apple Podcasts, Spotify, Pocket Casts)</p>
+              <a :href="rssFeedUrl" target="_blank" class="btn btn-outline rss-link">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M4 11a9 9 0 0 1 9 9"></path>
+                  <path d="M4 4a16 16 0 0 1 16 16"></path>
+                  <circle cx="5" cy="19" r="1"></circle>
+                </svg>
+                Feed im Browser öffnen
+              </a>
+            </div>
+          </div>
         </main>
         
         <!-- Sidebar -->
@@ -165,6 +191,7 @@ import { podcastStore } from '../stores/podcasts'
 
 const route = useRoute()
 const audioRef = ref(null)
+const rssInput = ref(null)
 const isPlaying = ref(false)
 const currentTime = ref(0)
 const duration = ref(0)
@@ -173,6 +200,35 @@ const previousVolume = ref(1)
 const playbackRate = ref('1')
 const podcast = ref(null)
 const loading = ref(true)
+const copyButtonText = ref('Kopieren')
+
+// RSS Feed URL
+const rssFeedUrl = computed(() => {
+  if (!podcast.value) return ''
+  const baseUrl = import.meta.env.VITE_API_URL || window.location.origin
+  return `${baseUrl}/api/podcasts/${podcast.value.id}/feed`
+})
+
+// Copy RSS URL to clipboard
+async function copyRssUrl() {
+  try {
+    await navigator.clipboard.writeText(rssFeedUrl.value)
+    copyButtonText.value = 'Kopiert!'
+    setTimeout(() => {
+      copyButtonText.value = 'Kopieren'
+    }, 2000)
+  } catch (err) {
+    // Fallback for older browsers
+    if (rssInput.value) {
+      rssInput.value.select()
+      document.execCommand('copy')
+      copyButtonText.value = 'Kopiert!'
+      setTimeout(() => {
+        copyButtonText.value = 'Kopieren'
+      }, 2000)
+    }
+  }
+}
 
 // Load podcast
 async function loadPodcast() {
@@ -726,6 +782,92 @@ watch(() => route.params.id, () => {
   }
   
   .podcast-meta {
+    justify-content: center;
+  }
+}
+
+/* RSS Feed Styles */
+.podcast-rss {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.podcast-rss h2 {
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.rss-box {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.rss-url {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.rss-url input {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  color: #666;
+  background: white;
+}
+
+.rss-url .btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  white-space: nowrap;
+}
+
+.btn-secondary {
+  background: #e5e7eb;
+  color: #333;
+}
+
+.btn-secondary:hover {
+  background: #d1d5db;
+}
+
+.btn-outline {
+  background: transparent;
+  border: 2px solid #1a5a8a;
+  color: #1a5a8a;
+}
+
+.btn-outline:hover {
+  background: #1a5a8a;
+  color: white;
+}
+
+.rss-hint {
+  font-size: 0.8rem;
+  color: #666;
+  margin-bottom: 1rem;
+}
+
+.rss-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+  .rss-url {
+    flex-direction: column;
+  }
+  
+  .rss-url .btn {
     justify-content: center;
   }
 }
