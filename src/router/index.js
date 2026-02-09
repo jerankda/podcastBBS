@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { authStore } from '../stores/auth'
 import Home from '../views/Home.vue'
 import Login from '../views/Login.vue'
 import Register from '../views/Register.vue'
@@ -54,10 +55,20 @@ const router = createRouter({
 
 // Navigation guard for auth
 router.beforeEach((to, from, next) => {
-  const isAuthenticated = localStorage.getItem('user')
-  
-  if (to.meta.requiresAuth && !isAuthenticated) {
-    next('/login')
+  // Check if route requires auth
+  if (to.meta.requiresAuth) {
+    // Check authStore first, then localStorage as fallback
+    if (authStore.user) {
+      next()
+    } else {
+      // Try localStorage
+      const storedUser = localStorage.getItem('user')
+      if (storedUser) {
+        next()
+      } else {
+        next('/login')
+      }
+    }
   } else {
     next()
   }

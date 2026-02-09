@@ -31,8 +31,10 @@ export const authStore = reactive({
             avatar: firebaseUser.photoURL,
             emailVerified: firebaseUser.emailVerified
           }
+          localStorage.setItem('user', JSON.stringify(this.user))
         } else {
           this.user = null
+          localStorage.removeItem('user')
         }
         this.loading = false
         resolve(this.user)
