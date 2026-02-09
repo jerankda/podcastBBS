@@ -1,0 +1,18 @@
+services:
+  podcaster:
+    build: .
+    container_name: podcaster
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    volumes:
+      # Persistente Daten - bleiben erhalten bei Container-Neustart
+      - podcaster_uploads:/app/server/uploads
+      - podcaster_data:/app/server/data
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+
+volumes:
+  podcaster_uploads:
+  podcaster_data:
