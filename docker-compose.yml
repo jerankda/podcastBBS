@@ -1,6 +1,9 @@
 services:
   podcaster:
-    build: .
+    build:
+      context: .
+      args:
+        - VITE_API_URL=http://31.220.76.204:3001
     container_name: podcaster
     restart: unless-stopped
     ports:
